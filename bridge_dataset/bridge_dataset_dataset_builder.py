@@ -6,6 +6,80 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import tensorflow_datasets as tfds
 from bridge_dataset.conversion_utils import MultiThreadedDatasetBuilder
+import json
+import os
+import cv2
+
+gripper_pos_lookup = json.load(open("/home/oier/bridge_labeled_dataset_1.json", "r"))
+depth_path = "/nfs/kun2/users/oier/bridge_depth"
+
+
+def get_depth_point(depth_map, x, y, smooth=True):
+    height, width = depth_map.shape
+    if x >= height:
+        print("x is greater than height: ", x)
+        x = height - 1
+    if y >= width:
+        print("y is greater than width: ", y)
+        y = width - 1
+    if smooth:
+        # Define the bounds of the neighborhood
+        min_y = max(0, y - 1)
+        max_y = min(width, y + 2)
+        min_x = max(0, x - 1)
+        max_x = min(height, x + 2)
+
+        # Extract the neighborhood
+        neighborhood = depth_map[min_x:max_x, min_y:max_y]
+
+        # Calculate the average value of the neighborhood
+        avg_value = np.mean(neighborhood)
+        return avg_value
+    else:
+        return depth_map[x, y]
+
+
+def compute_visual_trajectory(observation, depth_image, gripper_pos):
+    assert len(observation) == depth_image.shape[0]
+    assert len(observation) == len(gripper_pos)
+    depth_tcp = []
+    cumulative_depth_keypoints = []
+    cumulative_keypoints = []
+    traj_length = len(observation)
+    max_img_depth = np.max(depth_image)
+    min_img_depth = np.min(depth_image)
+    tcp_3d = []
+    for i in range(traj_length):
+        depth_kp = get_depth_point(depth_image[i], int(gripper_pos[i][0]), int(gripper_pos[i][1]), smooth=True)
+        depth_tcp.append(depth_kp)
+        tcp_3d.append([gripper_pos[i][0], gripper_pos[i][1], depth_kp])
+
+    for i in range(traj_length):
+        pairs = [(gripper_pos[i], gripper_pos[i + 1]) for i in range(i, len(observation) - 1, 1)]
+        depth_pairs = [(depth_tcp[i], depth_tcp[i + 1]) for i in range(i, len(observation) - 1, 1)]
+        cumulative_depth_keypoints.append(depth_pairs)
+        cumulative_keypoints.append(pairs)
+
+    temp_color_list = [int(255 * (i / traj_length)) for i in range(traj_length)]
+    count_idx = 0
+    list_of_traj_imgs = []
+    # print("total length of trajectory: ", traj_length)
+    for i in range(traj_length):
+        # print("processing image: ", i)
+        current_image = observation[i]['images0']
+        trajectory = cumulative_keypoints[i]
+        # print("length of trajectory: ", len(trajectory))
+        depth_traj = cumulative_depth_keypoints[i]
+        for j, keypoints in enumerate(trajectory):
+            depth_color = ((depth_traj[j][0] - min_img_depth) / (max_img_depth - min_img_depth) * 255.0)
+            cv2.line(current_image, (int(keypoints[0][0]), int(keypoints[0][1])),
+                     (int(keypoints[1][0]), int(keypoints[1][1])),
+                     color=(0, depth_color, temp_color_list[count_idx:][j]), thickness=2)
+        list_of_traj_imgs.append(current_image)
+        count_idx += 1
+        cv2.imwrite(os.path.join("/tmp", f'{i}.jpg'), current_image)
+    print("finished trajectory")
+    return list_of_traj_imgs, tcp_3d
 
 
 def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
@@ -21,7 +95,22 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
         for k, example in enumerate(data):
             # assemble episode --> here we're assuming demos so we set reward to 1 at the end
             episode = []
+            if episode_path in gripper_pos_lookup:
+                gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
+                #retrieve depth image
+                meta_id = f'{k}__{episode_path}'
+                meta_id = meta_id.replace('/', '\\')
+                depth_file = os.path.join(depth_path, meta_id)
+                if os.path.exists(depth_file):
+                    depth_image = np.load(depth_file)
+                    # print("loaded depth image shape: ", depth_image.shape)
+                    list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image, gripper_pos)
+                else:
+                    print("depth image not found")
+                    print("depth file: ", depth_file)
 
+            else:
+                print("gripper lookup not found")
             instruction = example['language'][0]
             if instruction:
                 language_embedding = _embed([instruction])[0].numpy()
@@ -39,7 +128,10 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation[new_key] = example['observations'][i][orig_key]
                     else:
                         observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
-
+                observation['visual_trajectory'] = list_traj_img[i]
+                observation['depth'] = depth_image[i]
+                observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
+                observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
                 episode.append({
                     'observation': observation,
                     'action': example['actions'][i].astype(np.float32),
@@ -82,13 +174,13 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
 
     VERSION = tfds.core.Version('1.0.0')
     RELEASE_NOTES = {
-      '1.0.0': 'Initial release.',
+        '1.0.0': 'Initial release.',
     }
-    N_WORKERS = 40             # number of parallel workers for data conversion
-    MAX_PATHS_IN_MEMORY = 80   # number of paths converted & stored in memory before writing to disk
-                               # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
-                               # note that one path may yield multiple episodes and adjust accordingly
-    PARSE_FCN = _generate_examples      # handle to parse function from file paths to RLDS episodes
+    N_WORKERS = 40  # number of parallel workers for data conversion
+    MAX_PATHS_IN_MEMORY = 80  # number of paths converted & stored in memory before writing to disk
+    # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
+    # note that one path may yield multiple episodes and adjust accordingly
+    PARSE_FCN = _generate_examples  # handle to parse function from file paths to RLDS episodes
 
     def _info(self) -> tfds.core.DatasetInfo:
         """Dataset metadata (homepage, citation,...)."""
@@ -125,7 +217,29 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             dtype=np.float32,
                             doc='Robot state, consists of [7x robot joint angles, '
                                 '2x gripper position, 1x door opening angle].',
-                        )
+                        ),
+                        'visual_trajectory': tfds.features.Image(
+                            shape=(256, 256, 3),
+                            dtype=np.uint8,
+                            encoding_format='jpeg',
+                            doc='Visual trajectory observation.',
+                        ),
+                        'depth': tfds.features.Tensor(
+                            shape=(256, 256),
+                            dtype=np.float32,
+                            # encoding_format='jpeg',  # check of this is correct
+                            doc='Main camera Depth observation.',
+                        ),
+                        'tcp_point_2d': tfds.features.Tensor(
+                            shape=(2,),
+                            dtype=np.int32,
+                            doc='TCP 2d point.',
+                        ),
+                        'tcp_point_3d': tfds.features.Tensor(
+                            shape=(3,),
+                            dtype=np.float32,
+                            doc='TCP 3d point.',
+                        ),
                     }),
                     'action': tfds.features.Tensor(
                         shape=(7,),
@@ -200,16 +314,15 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                       "/nfs/kun2/users/homer/datasets/bridge_data_all/scripted_numpy_256"]
         train_filenames, val_filenames = [], []
         for path in base_paths:
-          for filename in glob.glob(f'{path}/**/*.npy', recursive=True):
-            if '/train/out.npy' in filename:
-                train_filenames.append(filename)
-            elif '/val/out.npy' in filename:
-                val_filenames.append(filename)
-            else:
-                raise ValueError(filename)
+            for filename in glob.glob(f'{path}/**/*.npy', recursive=True):
+                if '/train/out.npy' in filename:
+                    train_filenames.append(filename)
+                elif '/val/out.npy' in filename:
+                    val_filenames.append(filename)
+                else:
+                    raise ValueError(filename)
         print(f"Converting {len(train_filenames)} training and {len(val_filenames)} validation files.")
         return {
             'train': train_filenames,
             'val': val_filenames,
         }
-
