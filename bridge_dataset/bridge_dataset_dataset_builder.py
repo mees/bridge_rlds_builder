@@ -10,7 +10,7 @@ import json
 import os
 import cv2
 
-gripper_pos_lookup = json.load(open("/home/oier/bridge_labeled_dataset_1.json", "r"))
+gripper_pos_lookup = json.load(open("/nfs/kun2/users/oier/bridge_labeled_dataset_1.json", "r"))
 depth_path = "/nfs/kun2/users/oier/bridge_depth"
 
 
