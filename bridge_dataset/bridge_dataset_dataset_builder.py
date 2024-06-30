@@ -77,8 +77,15 @@ def compute_visual_trajectory(observation, depth_image, gripper_pos):
                      color=(0, depth_color, temp_color_list[count_idx:][j]), thickness=2)
         list_of_traj_imgs.append(current_image)
         count_idx += 1
-        cv2.imwrite(os.path.join("/tmp", f'{i}.jpg'), current_image)
-    print("finished trajectory")
+        # from datetime import datetime
+        #
+        # timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        #
+        # # Create the directory with the current timestamp
+        # directory = os.path.join("/tmp", timestamp)
+        # os.makedirs(directory, exist_ok=True)
+        # cv2.imwrite(os.path.join(directory, f'{i}.jpg'), cv2.cvtColor(current_image, cv2.COLOR_BGR2RGB))
+    # print("finished trajectory")
     return list_of_traj_imgs, tcp_3d
 
 
