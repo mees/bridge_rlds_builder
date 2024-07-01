@@ -17,10 +17,10 @@ depth_path = "/nfs/kun2/users/oier/bridge_depth"
 def get_depth_point(depth_map, x, y, smooth=True):
     height, width = depth_map.shape
     if x >= height:
-        print("x is greater than height: ", x)
+        # print("x is greater than height: ", x)
         x = height - 1
     if y >= width:
-        print("y is greater than width: ", y)
+        # print("y is greater than width: ", y)
         y = width - 1
     if smooth:
         # Define the bounds of the neighborhood
@@ -183,8 +183,8 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
     RELEASE_NOTES = {
         '1.0.0': 'Initial release.',
     }
-    N_WORKERS = 40  # number of parallel workers for data conversion
-    MAX_PATHS_IN_MEMORY = 80  # number of paths converted & stored in memory before writing to disk
+    N_WORKERS = 20  # number of parallel workers for data conversion
+    MAX_PATHS_IN_MEMORY = 40  # number of paths converted & stored in memory before writing to disk
     # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
     # note that one path may yield multiple episodes and adjust accordingly
     PARSE_FCN = _generate_examples  # handle to parse function from file paths to RLDS episodes
