@@ -34,6 +34,9 @@ def get_depth_point(depth_map, x, y, smooth=True):
 
         # Calculate the average value of the neighborhood
         avg_value = np.mean(neighborhood)
+        if np.isnan(avg_value):
+            print("nan value found in depth map")
+            print("x: ", x, " y: ", y)
         return avg_value
     else:
         return depth_map[x, y]
@@ -183,8 +186,8 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
     RELEASE_NOTES = {
         '1.0.0': 'Initial release.',
     }
-    N_WORKERS = 20  # number of parallel workers for data conversion
-    MAX_PATHS_IN_MEMORY = 40  # number of paths converted & stored in memory before writing to disk
+    N_WORKERS = 1  # number of parallel workers for data conversion
+    MAX_PATHS_IN_MEMORY = 1  # number of paths converted & stored in memory before writing to disk
     # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
     # note that one path may yield multiple episodes and adjust accordingly
     PARSE_FCN = _generate_examples  # handle to parse function from file paths to RLDS episodes
