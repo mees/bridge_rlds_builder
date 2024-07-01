@@ -19,9 +19,13 @@ def get_depth_point(depth_map, x, y, smooth=True):
     if x >= height:
         # print("x is greater than height: ", x)
         x = height - 1
+    elif x < 0:
+        x = 0
     if y >= width:
         # print("y is greater than width: ", y)
         y = width - 1
+    elif y < 0:
+        y = 0
     if smooth:
         # Define the bounds of the neighborhood
         min_y = max(0, y - 1)
