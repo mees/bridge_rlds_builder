@@ -7,6 +7,8 @@ import tensorflow_hub as hub
 import tensorflow_datasets as tfds
 from bridge_dataset.conversion_utils import MultiThreadedDatasetBuilder
 import json
+from multiprocessing import set_start_method
+set_start_method("spawn")
 import os
 import cv2
 
