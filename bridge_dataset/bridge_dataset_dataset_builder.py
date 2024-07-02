@@ -193,7 +193,7 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
     RELEASE_NOTES = {
         '1.0.0': 'Initial release.',
     }
-    N_WORKERS = 40  # number of parallel workers for data conversion
+    N_WORKERS = 10  # number of parallel workers for data conversion
     MAX_PATHS_IN_MEMORY = 80  # number of paths converted & stored in memory before writing to disk
     # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
     # note that one path may yield multiple episodes and adjust accordingly
