@@ -111,6 +111,9 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
             episode = []
             if episode_path in gripper_pos_lookup:
                 gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
+                if gripper_pos is None:
+                    print("gripper position not found", episode_path, k)
+                    continue
                 #retrieve depth image
                 meta_id = f'{k}__{episode_path}'
                 meta_id = meta_id.replace('/', '\\')
