@@ -194,7 +194,7 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
         '1.0.0': 'Initial release.',
     }
     N_WORKERS = 10  # number of parallel workers for data conversion
-    MAX_PATHS_IN_MEMORY = 10  # number of paths converted & stored in memory before writing to disk
+    MAX_PATHS_IN_MEMORY = 1  # number of paths converted & stored in memory before writing to disk
     # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
     # note that one path may yield multiple episodes and adjust accordingly
     PARSE_FCN = _generate_examples  # handle to parse function from file paths to RLDS episodes
