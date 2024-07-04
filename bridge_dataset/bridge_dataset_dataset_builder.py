@@ -146,7 +146,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                     else:
                         observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
                 observation['visual_trajectory'] = list_traj_img[i]
-                observation['depth'] = depth_image[i]
+                # observation['depth'] = depth_image[i]
                 observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
                 observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
                 episode.append({
@@ -193,8 +193,8 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
     RELEASE_NOTES = {
         '1.0.0': 'Initial release.',
     }
-    N_WORKERS = 10  # number of parallel workers for data conversion
-    MAX_PATHS_IN_MEMORY = 1  # number of paths converted & stored in memory before writing to disk
+    N_WORKERS = 20  # number of parallel workers for data conversion
+    MAX_PATHS_IN_MEMORY = 80  # number of paths converted & stored in memory before writing to disk
     # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
     # note that one path may yield multiple episodes and adjust accordingly
     PARSE_FCN = _generate_examples  # handle to parse function from file paths to RLDS episodes
@@ -241,12 +241,12 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             encoding_format='jpeg',
                             doc='Visual trajectory observation.',
                         ),
-                        'depth': tfds.features.Tensor(
-                            shape=(256, 256),
-                            dtype=np.float32,
-                            # encoding_format='jpeg',  # check of this is correct
-                            doc='Main camera Depth observation.',
-                        ),
+                        # 'depth': tfds.features.Tensor(
+                        #     shape=(256, 256),
+                        #     dtype=np.float32,
+                        #     # encoding_format='jpeg',  # check of this is correct
+                        #     doc='Main camera Depth observation.',
+                        # ),
                         'tcp_point_2d': tfds.features.Tensor(
                             shape=(2,),
                             dtype=np.int32,
