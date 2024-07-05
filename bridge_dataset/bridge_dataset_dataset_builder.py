@@ -10,8 +10,8 @@ import json
 import os
 import cv2
 
-gripper_pos_lookup = json.load(open("/nfs/kun2/users/oier/bridge_labeled_dataset_1.json", "r"))
-depth_path = "/nfs/kun2/users/oier/bridge_depth"
+# gripper_pos_lookup = json.load(open("/nfs/kun2/users/oier/bridge_labeled_dataset_1.json", "r"))
+# depth_path = "/nfs/kun2/users/oier/bridge_depth"
 
 
 def get_depth_point(depth_map, x, y, smooth=True):
@@ -109,25 +109,25 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
         for k, example in enumerate(data):
             # assemble episode --> here we're assuming demos so we set reward to 1 at the end
             episode = []
-            if episode_path in gripper_pos_lookup:
-                gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
-                if gripper_pos is None:
-                    print("gripper position not found", episode_path, k)
-                    continue
-                #retrieve depth image
-                meta_id = f'{k}__{episode_path}'
-                meta_id = meta_id.replace('/', '\\')
-                depth_file = os.path.join(depth_path, meta_id)
-                if os.path.exists(depth_file):
-                    depth_image = np.load(depth_file)
-                    # print("loaded depth image shape: ", depth_image.shape)
-                    list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image, gripper_pos)
-                else:
-                    print("depth image not found")
-                    print("depth file: ", depth_file)
-
-            else:
-                print("gripper lookup not found")
+            # if episode_path in gripper_pos_lookup:
+            #     gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
+            #     if gripper_pos is None:
+            #         print("gripper position not found", episode_path, k)
+            #         continue
+            #     #retrieve depth image
+            #     meta_id = f'{k}__{episode_path}'
+            #     meta_id = meta_id.replace('/', '\\')
+            #     depth_file = os.path.join(depth_path, meta_id)
+            #     if os.path.exists(depth_file):
+            #         depth_image = np.load(depth_file)
+            #         # print("loaded depth image shape: ", depth_image.shape)
+            #         list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image, gripper_pos)
+            #     else:
+            #         print("depth image not found")
+            #         print("depth file: ", depth_file)
+            #
+            # else:
+            #     print("gripper lookup not found")
             instruction = example['language'][0]
             if instruction:
                 language_embedding = _embed([instruction])[0].numpy()
@@ -145,10 +145,10 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation[new_key] = example['observations'][i][orig_key]
                     else:
                         observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
-                observation['visual_trajectory'] = list_traj_img[i]
+                # observation['visual_trajectory'] = list_traj_img[i]
                 # observation['depth'] = depth_image[i]
-                observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
-                observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
+                # observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
+                # observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
                 episode.append({
                     'observation': observation,
                     'action': example['actions'][i].astype(np.float32),
@@ -235,28 +235,28 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             doc='Robot state, consists of [7x robot joint angles, '
                                 '2x gripper position, 1x door opening angle].',
                         ),
-                        'visual_trajectory': tfds.features.Image(
-                            shape=(256, 256, 3),
-                            dtype=np.uint8,
-                            encoding_format='jpeg',
-                            doc='Visual trajectory observation.',
-                        ),
+                        # 'visual_trajectory': tfds.features.Image(
+                        #     shape=(256, 256, 3),
+                        #     dtype=np.uint8,
+                        #     encoding_format='jpeg',
+                        #     doc='Visual trajectory observation.',
+                        # ),
                         # 'depth': tfds.features.Tensor(
                         #     shape=(256, 256),
                         #     dtype=np.float32,
                         #     # encoding_format='jpeg',  # check of this is correct
                         #     doc='Main camera Depth observation.',
                         # ),
-                        'tcp_point_2d': tfds.features.Tensor(
-                            shape=(2,),
-                            dtype=np.int32,
-                            doc='TCP 2d point.',
-                        ),
-                        'tcp_point_3d': tfds.features.Tensor(
-                            shape=(3,),
-                            dtype=np.float32,
-                            doc='TCP 3d point.',
-                        ),
+                        # 'tcp_point_2d': tfds.features.Tensor(
+                        #     shape=(2,),
+                        #     dtype=np.int32,
+                        #     doc='TCP 2d point.',
+                        # ),
+                        # 'tcp_point_3d': tfds.features.Tensor(
+                        #     shape=(3,),
+                        #     dtype=np.float32,
+                        #     doc='TCP 3d point.',
+                        # ),
                     }),
                     'action': tfds.features.Tensor(
                         shape=(7,),
