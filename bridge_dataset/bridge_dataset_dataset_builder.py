@@ -10,8 +10,8 @@ import json
 import os
 import cv2
 
-# gripper_pos_lookup = json.load(open("/nfs/kun2/users/oier/bridge_labeled_dataset_1.json", "r"))
-# depth_path = "/nfs/kun2/users/oier/bridge_depth"
+gripper_pos_lookup = json.load(open("/nfs/kun2/users/oier/bridge_labeled_dataset_1.json", "r"))
+depth_path = "/nfs/kun2/users/oier/bridge_depth"
 
 
 def get_depth_point(depth_map, x, y, smooth=True):
@@ -109,11 +109,11 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
         for k, example in enumerate(data):
             # assemble episode --> here we're assuming demos so we set reward to 1 at the end
             episode = []
-            # if episode_path in gripper_pos_lookup:
-            #     gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
-            #     if gripper_pos is None:
-            #         print("gripper position not found", episode_path, k)
-            #         continue
+            if episode_path in gripper_pos_lookup:
+                gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
+                if gripper_pos is None:
+                    print("gripper position not found", episode_path, k)
+                    continue
             #     #retrieve depth image
             #     meta_id = f'{k}__{episode_path}'
             #     meta_id = meta_id.replace('/', '\\')
@@ -147,7 +147,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
                 # observation['visual_trajectory'] = list_traj_img[i]
                 # observation['depth'] = depth_image[i]
-                # observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
+                observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
                 # observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
                 episode.append({
                     'observation': observation,
@@ -247,11 +247,11 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                         #     # encoding_format='jpeg',  # check of this is correct
                         #     doc='Main camera Depth observation.',
                         # ),
-                        # 'tcp_point_2d': tfds.features.Tensor(
-                        #     shape=(2,),
-                        #     dtype=np.int32,
-                        #     doc='TCP 2d point.',
-                        # ),
+                        'tcp_point_2d': tfds.features.Tensor(
+                            shape=(2,),
+                            dtype=np.int32,
+                            doc='TCP 2d point.',
+                        ),
                         # 'tcp_point_3d': tfds.features.Tensor(
                         #     shape=(3,),
                         #     dtype=np.float32,
