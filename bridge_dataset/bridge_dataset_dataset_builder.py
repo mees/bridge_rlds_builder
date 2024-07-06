@@ -109,11 +109,11 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
         for k, example in enumerate(data):
             # assemble episode --> here we're assuming demos so we set reward to 1 at the end
             episode = []
-            if episode_path in gripper_pos_lookup:
-                gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
-                if gripper_pos is None:
-                    print("gripper position not found", episode_path, k)
-                    continue
+            # if episode_path in gripper_pos_lookup:
+            #     gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
+            #     if gripper_pos is None:
+            #         print("gripper position not found", episode_path, k)
+            #         continue
             #     #retrieve depth image
             #     meta_id = f'{k}__{episode_path}'
             #     meta_id = meta_id.replace('/', '\\')
@@ -147,7 +147,8 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
                 # observation['visual_trajectory'] = list_traj_img[i]
                 # observation['depth'] = depth_image[i]
-                observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
+                observation['tcp_point_2d'] = np.array([1.1, 2.1], dtype=np.int32)
+                # observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
                 # observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
                 episode.append({
                     'observation': observation,
@@ -193,7 +194,7 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
     RELEASE_NOTES = {
         '1.0.0': 'Initial release.',
     }
-    N_WORKERS = 20  # number of parallel workers for data conversion
+    N_WORKERS = 30  # number of parallel workers for data conversion
     MAX_PATHS_IN_MEMORY = 80  # number of paths converted & stored in memory before writing to disk
     # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
     # note that one path may yield multiple episodes and adjust accordingly
