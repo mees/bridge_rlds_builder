@@ -150,7 +150,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                 observation['depth'] = np.random.random((256, 256)).astype(np.float32)
                 observation['visual_trajectory'] = np.zeros_like((256, 256, 3)).astype(np.uint8)
                 observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
-                observation['tcp_point_23'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
+                observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
                 # observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
                 # observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
                 episode.append({
