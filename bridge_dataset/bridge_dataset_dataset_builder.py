@@ -147,7 +147,10 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
                 # observation['visual_trajectory'] = list_traj_img[i]
                 # observation['depth'] = depth_image[i]
+                observation['depth'] = np.random.random(example['observations'][0]['images0'])
+                observation['visual_trajectory'] = np.zeros_like(example['observations'][0]['images0'])
                 observation['tcp_point_2d'] = np.array([1.1, 2.1], dtype=np.int32)
+                observation['tcp_point_23'] = np.array([1.1, 2.1, 3.1], dtype=np.int32)
                 # observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
                 # observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
                 episode.append({
@@ -236,28 +239,28 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             doc='Robot state, consists of [7x robot joint angles, '
                                 '2x gripper position, 1x door opening angle].',
                         ),
-                        # 'visual_trajectory': tfds.features.Image(
-                        #     shape=(256, 256, 3),
-                        #     dtype=np.uint8,
-                        #     encoding_format='jpeg',
-                        #     doc='Visual trajectory observation.',
-                        # ),
-                        # 'depth': tfds.features.Tensor(
-                        #     shape=(256, 256),
-                        #     dtype=np.float32,
-                        #     # encoding_format='jpeg',  # check of this is correct
-                        #     doc='Main camera Depth observation.',
-                        # ),
+                        'visual_trajectory': tfds.features.Image(
+                            shape=(256, 256, 3),
+                            dtype=np.uint8,
+                            encoding_format='jpeg',
+                            doc='Visual trajectory observation.',
+                        ),
+                        'depth': tfds.features.Tensor(
+                            shape=(256, 256),
+                            dtype=np.float32,
+                            # encoding_format='jpeg',  # check of this is correct
+                            doc='Main camera Depth observation.',
+                        ),
                         'tcp_point_2d': tfds.features.Tensor(
                             shape=(2,),
                             dtype=np.int32,
                             doc='TCP 2d point.',
                         ),
-                        # 'tcp_point_3d': tfds.features.Tensor(
-                        #     shape=(3,),
-                        #     dtype=np.float32,
-                        #     doc='TCP 3d point.',
-                        # ),
+                        'tcp_point_3d': tfds.features.Tensor(
+                            shape=(3,),
+                            dtype=np.float32,
+                            doc='TCP 3d point.',
+                        ),
                     }),
                     'action': tfds.features.Tensor(
                         shape=(7,),
