@@ -147,7 +147,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
                 # observation['visual_trajectory'] = list_traj_img[i]
                 # observation['depth'] = depth_image[i]
-                observation['depth'] = np.random.random((256, 256)).astype(np.float32)
+                # observation['depth'] = np.random.random((256, 256)).astype(np.float32)
                 observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
                 observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
                 observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
@@ -245,12 +245,12 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             encoding_format='jpeg',
                             doc='Visual trajectory observation.',
                         ),
-                        'depth': tfds.features.Tensor(
-                            shape=(256, 256),
-                            dtype=np.float32,
-                            # encoding_format='jpeg',  # check of this is correct
-                            doc='Main camera Depth observation.',
-                        ),
+                        # 'depth': tfds.features.Tensor(
+                        #     shape=(256, 256),
+                        #     dtype=np.float32,
+                        #     # encoding_format='jpeg',  # check of this is correct
+                        #     doc='Main camera Depth observation.',
+                        # ),
                         'tcp_point_2d': tfds.features.Tensor(
                             shape=(2,),
                             dtype=np.int32,
