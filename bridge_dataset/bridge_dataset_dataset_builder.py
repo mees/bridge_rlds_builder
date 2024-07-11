@@ -10,8 +10,8 @@ import json
 import os
 import cv2
 
-gripper_pos_lookup = json.load(open("/nfs/kun2/users/oier/bridge_labeled_dataset_1.json", "r"))
-depth_path = "/nfs/kun2/users/oier/bridge_depth"
+gripper_pos_lookup = json.load(open("/home/oier/bridge_labeled_dataset_1.json", "r"))
+depth_path = "/home/oier/bridge_depth"
 
 
 def get_depth_point(depth_map, x, y, smooth=True):
@@ -109,25 +109,31 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
         for k, example in enumerate(data):
             # assemble episode --> here we're assuming demos so we set reward to 1 at the end
             episode = []
-            # if episode_path in gripper_pos_lookup:
-            #     gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
-            #     if gripper_pos is None:
-            #         print("gripper position not found", episode_path, k)
-            #         continue
-            #     #retrieve depth image
-            #     meta_id = f'{k}__{episode_path}'
-            #     meta_id = meta_id.replace('/', '\\')
-            #     depth_file = os.path.join(depth_path, meta_id)
-            #     if os.path.exists(depth_file):
-            #         depth_image = np.load(depth_file)
-            #         # print("loaded depth image shape: ", depth_image.shape)
-            #         list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image, gripper_pos)
-            #     else:
-            #         print("depth image not found")
-            #         print("depth file: ", depth_file)
-            #
-            # else:
-            #     print("gripper lookup not found")
+            # episode_path_kun = episode_path.replace("/home/oier/", "/nfs/kun2/users/homer/datasets/bridge_data_all/")
+            found = True
+            if episode_path in gripper_pos_lookup:
+                gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
+                if gripper_pos is None:
+                    print("gripper position not found", episode_path, k)
+                    # continue
+                    found = False
+                #retrieve depth image
+                meta_id = f'{k}__{episode_path}'
+                meta_id = meta_id.replace('/', '\\')
+                depth_file = os.path.join(depth_path, meta_id)
+                if os.path.exists(depth_file):
+                    depth_image = np.load(depth_file)
+                    # print("loaded depth image shape: ", depth_image.shape)
+                    list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image, gripper_pos)
+                else:
+                    print("depth image not found")
+                    print("depth file: ", depth_file)
+                    found = False
+
+            else:
+                print("gripper lookup not found")
+                found = False
+                # continue
             instruction = example['language'][0]
             if instruction:
                 language_embedding = _embed([instruction])[0].numpy()
@@ -145,14 +151,20 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation[new_key] = example['observations'][i][orig_key]
                     else:
                         observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
-                # observation['visual_trajectory'] = list_traj_img[i]
+                if found:
+                    observation['visual_trajectory'] = list_traj_img[i]
+                    observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
+                    observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
+                    observation['trajectory_found'] = True
+                else:
+                    observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
+                    observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
+                    observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
+                    observation['trajectory_found'] = False
                 # observation['depth'] = depth_image[i]
                 # observation['depth'] = np.random.random((256, 256)).astype(np.float32)
-                observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
-                observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
-                observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
-                # observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
-                # observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
+
+
                 episode.append({
                     'observation': observation,
                     'action': example['actions'][i].astype(np.float32),
@@ -164,6 +176,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                     'language_instruction': instruction,
                     'language_embedding': language_embedding,
                 })
+
 
             # create output data sample
             sample = {
@@ -184,6 +197,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
             # if you want to skip an example for whatever reason, simply return None
             yield episode_path + str(k), sample
 
+
     # for smallish datasets, use single-thread parsing
     for sample in paths:
         for id, sample in _parse_examples(sample):
@@ -198,7 +212,7 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
         '1.0.0': 'Initial release.',
     }
     N_WORKERS = 20  # number of parallel workers for data conversion
-    MAX_PATHS_IN_MEMORY = 80  # number of paths converted & stored in memory before writing to disk
+    MAX_PATHS_IN_MEMORY = 20  # number of paths converted & stored in memory before writing to disk
     # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
     # note that one path may yield multiple episodes and adjust accordingly
     PARSE_FCN = _generate_examples  # handle to parse function from file paths to RLDS episodes
@@ -260,6 +274,10 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             shape=(3,),
                             dtype=np.float32,
                             doc='TCP 3d point.',
+                        ),
+                        'trajectory_found': tfds.features.Scalar(
+                            dtype=np.bool_,
+                            doc='True on first step of the episode.'
                         ),
                     }),
                     'action': tfds.features.Tensor(
@@ -331,8 +349,8 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
 
     def _split_paths(self):
         """Define filepaths for data splits."""
-        base_paths = ["/nfs/kun2/users/homer/datasets/bridge_data_all/numpy_256",
-                      "/nfs/kun2/users/homer/datasets/bridge_data_all/scripted_numpy_256"]
+        base_paths = ["/home/oier/numpy_256",
+                      "/home/oier/scripted_numpy_256"]
         train_filenames, val_filenames = [], []
         for path in base_paths:
             for filename in glob.glob(f'{path}/**/*.npy', recursive=True):
