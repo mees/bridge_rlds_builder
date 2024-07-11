@@ -10,8 +10,8 @@ import json
 import os
 import cv2
 
-gripper_pos_lookup = json.load(open("/home/oier/bridge_labeled_dataset_1.json", "r"))
-depth_path = "/home/oier/bridge_depth"
+gripper_pos_lookup = json.load(open("/nfs/kun2/users/oier/bridge_labeled_dataset_1.json", "r"))
+depth_path = "/nfs/kun2/users/oier/bridge_depth"
 
 
 def get_depth_point(depth_map, x, y, smooth=True):
@@ -349,8 +349,8 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
 
     def _split_paths(self):
         """Define filepaths for data splits."""
-        base_paths = ["/home/oier/numpy_256",
-                      "/home/oier/scripted_numpy_256"]
+        base_paths = ["/nfs/kun2/users/homer/datasets/bridge_data_all/numpy_256",
+                      "/nfs/kun2/users/homer/datasets/bridge_data_all/scripted_numpy_256"]
         train_filenames, val_filenames = [], []
         for path in base_paths:
             for filename in glob.glob(f'{path}/**/*.npy', recursive=True):
