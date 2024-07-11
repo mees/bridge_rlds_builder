@@ -117,18 +117,19 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                     print("gripper position not found", episode_path, k)
                     # continue
                     found = False
-                #retrieve depth image
-                meta_id = f'{k}__{episode_path}'
-                meta_id = meta_id.replace('/', '\\')
-                depth_file = os.path.join(depth_path, meta_id)
-                if os.path.exists(depth_file):
-                    depth_image = np.load(depth_file)
-                    # print("loaded depth image shape: ", depth_image.shape)
-                    list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image, gripper_pos)
                 else:
-                    print("depth image not found")
-                    print("depth file: ", depth_file)
-                    found = False
+                #retrieve depth image
+                    meta_id = f'{k}__{episode_path}'
+                    meta_id = meta_id.replace('/', '\\')
+                    depth_file = os.path.join(depth_path, meta_id)
+                    if os.path.exists(depth_file):
+                        depth_image = np.load(depth_file)
+                        # print("loaded depth image shape: ", depth_image.shape)
+                        list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image, gripper_pos)
+                    else:
+                        print("depth image not found")
+                        print("depth file: ", depth_file)
+                        found = False
 
             else:
                 print("gripper lookup not found")
