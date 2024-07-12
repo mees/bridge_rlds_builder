@@ -112,24 +112,31 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
             # episode_path_kun = episode_path.replace("/home/oier/", "/nfs/kun2/users/homer/datasets/bridge_data_all/")
             found = True
             if episode_path in gripper_pos_lookup:
-                gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
-                if gripper_pos is None:
-                    print("gripper position not found", episode_path, k)
-                    # continue
-                    found = False
-                else:
-                #retrieve depth image
-                    meta_id = f'{k}__{episode_path}'
-                    meta_id = meta_id.replace('/', '\\')
-                    depth_file = os.path.join(depth_path, meta_id)
-                    if os.path.exists(depth_file):
-                        depth_image = np.load(depth_file)
-                        # print("loaded depth image shape: ", depth_image.shape)
-                        list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image, gripper_pos)
-                    else:
-                        print("depth image not found")
-                        print("depth file: ", depth_file)
+                if str(k) in gripper_pos_lookup[episode_path]:
+                    gripper_pos = gripper_pos_lookup[episode_path][str(k)]['features']['gripper_position']
+                    if gripper_pos is None:
+                        print("gripper position not found", episode_path, k)
+                        # continue
                         found = False
+                    else:
+                        # retrieve depth image
+                        meta_id = f'{k}__{episode_path}'
+                        meta_id = meta_id.replace('/', '\\')
+                        depth_file = os.path.join(depth_path, meta_id)
+                        if os.path.exists(depth_file):
+                            depth_image = np.load(depth_file)
+                            # print("loaded depth image shape: ", depth_image.shape)
+                            list_traj_img, tcp_3d = compute_visual_trajectory(example['observations'], depth_image,
+                                                                              gripper_pos)
+                        else:
+                            print("depth image not found")
+                            print("depth file: ", depth_file)
+                            found = False
+                else:
+                    print("traj lookup not found")
+                    print(str(k))
+                    print(gripper_pos_lookup[episode_path].keys())
+                    found = False
 
             else:
                 print("gripper lookup not found")
