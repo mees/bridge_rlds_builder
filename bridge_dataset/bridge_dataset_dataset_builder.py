@@ -163,12 +163,13 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                     observation['visual_trajectory'] = list_traj_img[i]
                     observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
                     observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
-                    observation['trajectory_found'] = True
+                    # observation['trajectory_found'] = True
                 else:
+                    continue
                     observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
                     observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
                     observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
-                    observation['trajectory_found'] = False
+                    # observation['trajectory_found'] = False
                 # observation['depth'] = depth_image[i]
                 # observation['depth'] = np.random.random((256, 256)).astype(np.float32)
 
@@ -283,10 +284,10 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             dtype=np.float32,
                             doc='TCP 3d point.',
                         ),
-                        'trajectory_found': tfds.features.Scalar(
-                            dtype=np.bool_,
-                            doc='True on first step of the episode.'
-                        ),
+                        # 'trajectory_found': tfds.features.Scalar(
+                        #     dtype=np.bool_,
+                        #     doc='True on first step of the episode.'
+                        # ),
                     }),
                     'action': tfds.features.Tensor(
                         shape=(7,),
