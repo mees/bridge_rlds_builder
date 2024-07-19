@@ -73,7 +73,7 @@ def compute_visual_trajectory(observation, depth_image, gripper_pos):
     # print("total length of trajectory: ", traj_length)
     for i in range(traj_length):
         # print("processing image: ", i)
-        current_image = observation[i]['images0']
+        current_image = observation[i]['images0'].copy()
         trajectory = cumulative_keypoints[i]
         # print("length of trajectory: ", len(trajectory))
         depth_traj = cumulative_depth_keypoints[i]
