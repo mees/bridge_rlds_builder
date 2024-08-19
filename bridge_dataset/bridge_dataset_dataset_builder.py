@@ -166,14 +166,15 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                     # observation['trajectory_found'] = True
                 else:
                     continue
-                    observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
-                    observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
-                    observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
+                    # observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
+                    # observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
+                    # observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
                     # observation['trajectory_found'] = False
                 # observation['depth'] = depth_image[i]
                 # observation['depth'] = np.random.random((256, 256)).astype(np.float32)
 
-
+                print("length of episode: ", len(episode))
+                print("length of observations: ", len(example['observations']))
                 episode.append({
                     'observation': observation,
                     'action': example['actions'][i].astype(np.float32),
