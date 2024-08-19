@@ -105,7 +105,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
     def _parse_examples(episode_path):
         # load raw data --> this should change for your dataset
         data = np.load(episode_path, allow_pickle=True)  # this is a list of dicts in our case
-
+        count_not_found=0
         for k, example in enumerate(data):
             # assemble episode --> here we're assuming demos so we set reward to 1 at the end
             episode = []
@@ -148,63 +148,69 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
             else:
                 language_embedding = np.zeros(512, dtype=np.float32)
 
-            for i in range(len(example['observations'])):
-                observation = {
-                    'state': example['observations'][i]['state'].astype(np.float32),
+            if found:
+                for i in range(len(example['observations'])):
+                    observation = {
+                        'state': example['observations'][i]['state'].astype(np.float32),
+                    }
+                    for image_idx in range(4):
+                        orig_key = f'images{image_idx}'
+                        new_key = f'image_{image_idx}'
+                        if orig_key in example['observations'][i]:
+                            observation[new_key] = example['observations'][i][orig_key]
+                        else:
+                            observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
+
+                        observation['visual_trajectory'] = list_traj_img[i]
+                        observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
+                        observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
+                        # observation['trajectory_found'] = True
+
+                        # observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
+                        # observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
+                        # observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
+                        # observation['trajectory_found'] = False
+                    # observation['depth'] = depth_image[i]
+                    # observation['depth'] = np.random.random((256, 256)).astype(np.float32)
+
+                    episode.append({
+                        'observation': observation,
+                        'action': example['actions'][i].astype(np.float32),
+                        'discount': 1.0,
+                        'reward': float(i == (len(example['observations']) - 1)),
+                        'is_first': i == 0,
+                        'is_last': i == (len(example['observations']) - 1),
+                        'is_terminal': i == (len(example['observations']) - 1),
+                        'language_instruction': instruction,
+                        'language_embedding': language_embedding,
+                    })
+            else:
+                count_not_found += 1
+                print("visual trajectory not found, counter: ", count_not_found)
+
+
+            if len(episode) > 0:
+                # create output data sample
+                sample = {
+                    'steps': episode,
+                    'episode_metadata': {
+                        'file_path': episode_path,
+                        'episode_id': k,
+                    }
                 }
+                # mark dummy values
                 for image_idx in range(4):
                     orig_key = f'images{image_idx}'
                     new_key = f'image_{image_idx}'
-                    if orig_key in example['observations'][i]:
-                        observation[new_key] = example['observations'][i][orig_key]
-                    else:
-                        observation[new_key] = np.zeros_like(example['observations'][i]['images0'])
-                if found:
-                    observation['visual_trajectory'] = list_traj_img[i]
-                    observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
-                    observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
-                    # observation['trajectory_found'] = True
-                else:
-                    continue
-                    # observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
-                    # observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
-                    # observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
-                    # observation['trajectory_found'] = False
-                # observation['depth'] = depth_image[i]
-                # observation['depth'] = np.random.random((256, 256)).astype(np.float32)
+                    sample['episode_metadata'][f'has_{new_key}'] = orig_key in example['observations']
+                sample['episode_metadata']['has_language'] = bool(instruction)
 
-                episode.append({
-                    'observation': observation,
-                    'action': example['actions'][i].astype(np.float32),
-                    'discount': 1.0,
-                    'reward': float(i == (len(example['observations']) - 1)),
-                    'is_first': i == 0,
-                    'is_last': i == (len(example['observations']) - 1),
-                    'is_terminal': i == (len(example['observations']) - 1),
-                    'language_instruction': instruction,
-                    'language_embedding': language_embedding,
-                })
+                # if you want to skip an example for whatever reason, simply return None
+                yield episode_path + str(k), sample
+            else:
+                print("episode is empty")
 
-            if len(episode) == 0:
-                print("length of episode: ", len(episode))
-            # create output data sample
-            sample = {
-                'steps': episode,
-                'episode_metadata': {
-                    'file_path': episode_path,
-                    'episode_id': k,
-                }
-            }
 
-            # mark dummy values
-            for image_idx in range(4):
-                orig_key = f'images{image_idx}'
-                new_key = f'image_{image_idx}'
-                sample['episode_metadata'][f'has_{new_key}'] = orig_key in example['observations']
-            sample['episode_metadata']['has_language'] = bool(instruction)
-
-            # if you want to skip an example for whatever reason, simply return None
-            yield episode_path + str(k), sample
 
 
     # for smallish datasets, use single-thread parsing
