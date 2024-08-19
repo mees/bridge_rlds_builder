@@ -172,10 +172,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                     # observation['trajectory_found'] = False
                 # observation['depth'] = depth_image[i]
                 # observation['depth'] = np.random.random((256, 256)).astype(np.float32)
-                if len(episode)==0:
-                    print("length of episode: ", len(episode))
-                if len(example['observations'])==0:
-                    print("length of observations: ", len(example['observations']))
+
                 episode.append({
                     'observation': observation,
                     'action': example['actions'][i].astype(np.float32),
@@ -188,7 +185,8 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                     'language_embedding': language_embedding,
                 })
 
-
+            if len(episode) == 0:
+                print("length of episode: ", len(episode))
             # create output data sample
             sample = {
                 'steps': episode,
