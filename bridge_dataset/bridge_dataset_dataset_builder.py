@@ -181,7 +181,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                 print("visual trajectory not found, counter: ", count_not_found)
 
 
-            if len(episode) > 0 and found:
+            if len(episode) > 0:
                 # create output data sample
                 sample = {
                     'steps': episode,
