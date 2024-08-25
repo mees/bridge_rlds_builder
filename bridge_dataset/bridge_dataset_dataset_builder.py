@@ -164,14 +164,6 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation['visual_trajectory'] = list_traj_img[i]
                         observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
                         observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
-                        # observation['trajectory_found'] = True
-
-                        # observation['visual_trajectory'] = np.zeros_like(example['observations'][i]['images0']).astype(np.uint8)
-                        # observation['tcp_point_2d'] = np.array([1, 2], dtype=np.int32)
-                        # observation['tcp_point_3d'] = np.array([1.1, 2.1, 3.1], dtype=np.float32)
-                        # observation['trajectory_found'] = False
-                    # observation['depth'] = depth_image[i]
-                    # observation['depth'] = np.random.random((256, 256)).astype(np.float32)
 
                     episode.append({
                         'observation': observation,
@@ -189,7 +181,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                 print("visual trajectory not found, counter: ", count_not_found)
 
 
-            if len(episode) > 0:
+            if len(episode) > 0 and found:
                 # create output data sample
                 sample = {
                     'steps': episode,
