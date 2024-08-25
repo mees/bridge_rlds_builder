@@ -201,6 +201,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                 yield episode_path + str(k), sample
             else:
                 print("episode is empty")
+                return None
 
 
 
