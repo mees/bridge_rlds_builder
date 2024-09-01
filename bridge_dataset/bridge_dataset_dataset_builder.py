@@ -285,9 +285,7 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             doc='TCP 3d point.',
                         ),
                         'tcp_point_3d_trajectory': tfds.features.Sequence(
-                            shape=(3,),
-                            dtype=np.float32,
-                            doc='A variable-length list of 3d points.'
+                            feature=tfds.features.Tensor(shape=(3,), dtype=np.float32),
                         ),
                         # 'trajectory_found': tfds.features.Scalar(
                         #     dtype=np.bool_,
