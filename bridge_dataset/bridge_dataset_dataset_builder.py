@@ -164,6 +164,7 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
                         observation['visual_trajectory'] = list_traj_img[i]
                         observation['tcp_point_2d'] = np.array(gripper_pos[i], dtype=np.int32)
                         observation['tcp_point_3d'] = np.array(tcp_3d[i], dtype=np.float32)
+                        observation['tcp_point_3d_trajectory'] = np.array(tcp_3d[i:], dtype=np.float32)
 
                     episode.append({
                         'observation': observation,
@@ -282,6 +283,10 @@ class BridgeDataset(MultiThreadedDatasetBuilder):
                             shape=(3,),
                             dtype=np.float32,
                             doc='TCP 3d point.',
+                        ),
+                        'tcp_point_3d_trajectory': tfds.features.Sequence(
+                            tf.float32,
+                            doc='A variable-length list of 3d points.'
                         ),
                         # 'trajectory_found': tfds.features.Scalar(
                         #     dtype=np.bool_,
